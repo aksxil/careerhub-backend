@@ -6,12 +6,19 @@ const mongoose = require("mongoose");
 
 // ------------------- CORS -------------------
 const cors = require("cors");
+
 app.use(
   cors({
-  origin: "https://careerhub-frontend-amber.vercel.app",
-  credentials: true
-})
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "https://careerhub-frontend-amber.vercel.app"
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  })
 );
+
 
 // ------------------- DATABASE -------------------
 require("./models/database").connectDatabase();
