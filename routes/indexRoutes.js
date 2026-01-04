@@ -3,22 +3,36 @@ const router = express.Router();
 
 const {
   homepage,
+
+  // STUDENT AUTH
   StudentSignup,
   StudentSignin,
   StudentSignout,
   currentUser,
+
+  // PASSWORD
   Studentsendmail,
   studentforgetlink,
   studentresetPassword,
+
+  // PROFILE
   studentupdate,
   studentavatar,
+
+  // APPLY
   applyjob,
   applyinternship,
+
+  // FETCH
   getAllInternships,
   getSingleInternship,
   getAllJobs,
   getSingleJob,
+
+  // APPLICATIONS
   getMyApplications,
+
+  // SAVE
   saveJobInternship,
   getSavedJobsInternships,
   removeSavedItem,
@@ -26,63 +40,43 @@ const {
 
 const { isAuthenticated } = require("../middlewares/auth");
 
-/* ================= HOME ================= */
+// ---------------- HOME ----------------
 router.get("/", homepage);
 
-/* ================= CURRENT USER ================= */
+// ---------------- CURRENT USER ----------------
 router.get("/student", isAuthenticated, currentUser);
 
-/* ================= AUTH ================= */
+// ---------------- AUTH ----------------
 router.post("/student/signup", StudentSignup);
 router.post("/student/signin", StudentSignin);
 router.get("/student/signout", isAuthenticated, StudentSignout);
 
-/* ================= PASSWORD ================= */
+// ---------------- PASSWORD ----------------
 router.post("/student/send-mail", Studentsendmail);
 router.post("/student/forget-link/:id", studentforgetlink);
-router.post(
-  "/student/reset-password/:id",
-  isAuthenticated,
-  studentresetPassword
-);
+router.post("/student/reset-password/:id", studentresetPassword);
 
-/* ================= PROFILE ================= */
+// ---------------- PROFILE ----------------
 router.post("/student/update/:id", isAuthenticated, studentupdate);
 router.post("/student/avatar/:id", isAuthenticated, studentavatar);
 
-/* ================= APPLY ================= */
-router.post(
-  "/student/apply/internship/:internshipid",
-  isAuthenticated,
-  applyinternship
-);
+// ---------------- APPLY ----------------
+router.post("/student/apply/internship/:internshipid", isAuthenticated, applyinternship);
+router.post("/student/apply/job/:jobid", isAuthenticated, applyjob);
 
-router.post(
-  "/student/apply/job/:jobid",
-  isAuthenticated,
-  applyjob
-);
+// ---------------- PUBLIC DATA (VERY IMPORTANT FIX) ----------------
+// ❌ removed isAuthenticated here
+router.get("/internships", getAllInternships);
+router.get("/internships/:id", getSingleInternship);
+router.get("/jobs", getAllJobs);
+router.get("/jobs/:id", getSingleJob);
 
-/* ================= FETCH ================= */
-router.get("/internships", isAuthenticated, getAllInternships);
-router.get("/internships/:id", isAuthenticated, getSingleInternship);
-router.get("/jobs", isAuthenticated, getAllJobs);
-router.get("/jobs/:id", isAuthenticated, getSingleJob);
-
-/* ================= APPLICATIONS ================= */
+// ---------------- APPLICATIONS ----------------
 router.post("/myapplications", isAuthenticated, getMyApplications);
 
-/* ================= SAVED ================= */
+// ---------------- SAVED ----------------
 router.post("/student/save", isAuthenticated, saveJobInternship);
-router.get(
-  "/student/:studentId/saved",
-  isAuthenticated,
-  getSavedJobsInternships
-);
-router.post(
-  "/remove/:userId/:itemType/:itemId",
-  isAuthenticated,
-  removeSavedItem
-);
+router.get("/student/:studentId/saved", isAuthenticated, getSavedJobsInternships);
+router.post("/remove/:userId/:itemType/:itemId", isAuthenticated, removeSavedItem);
 
 module.exports = router;
