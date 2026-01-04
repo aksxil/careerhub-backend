@@ -7,7 +7,6 @@ const { sendtoken } = require("../utils/SendToken");
 const { sendmail } = require("../utils/nodemailer");
 const imagekit = require("../utils/imagekit").initImageKit();
 const path = require("path");
-const Employe = require("../models/employeModel");
 
 // ================= HOME =================
 exports.homepage = catchAsyncError(async (req, res) => {
@@ -16,10 +15,9 @@ exports.homepage = catchAsyncError(async (req, res) => {
 
 // ================= CURRENT USER =================
 exports.currentUser = catchAsyncError(async (req, res, next) => {
-  if (!req.id) {
-    return next(new ErrorHandler("Unauthorized", 401));
-  }
-  const student = await Student.findById(req.id).exec();
+  if (!req.id) return next(new ErrorHandler("Unauthorized", 401));
+
+  const student = await Student.findById(req.id);
   res.json({ student });
 });
 
@@ -32,20 +30,16 @@ exports.StudentSignup = catchAsyncError(async (req, res) => {
 // ================= SIGNIN =================
 exports.StudentSignin = catchAsyncError(async (req, res, next) => {
   const student = await Student.findOne({ email: req.body.email })
-    .select("+password")
-    .exec();
+    .select("+password");
 
   if (!student) {
-    return next(new ErrorHandler("User not found with this email", 404));
+    return next(new ErrorHandler("User not found", 404));
   }
 
   const isMatch = await student.comparepassword(req.body.password);
   if (!isMatch) {
-    return next(new ErrorHandler("Incorrect email or password", 401));
+    return next(new ErrorHandler("Invalid credentials", 401));
   }
-
-  // 🔥 IMPORTANT FIX: attach id for auth middleware
-  req.id = student._id;
 
   sendtoken(student, 200, res);
 });
@@ -53,22 +47,20 @@ exports.StudentSignin = catchAsyncError(async (req, res, next) => {
 // ================= SIGNOUT =================
 exports.StudentSignout = catchAsyncError(async (req, res) => {
   res.clearCookie("token");
-  req.session?.destroy(() => {});
-  res.json({ message: "Successfully signed out" });
+  res.json({ message: "Logged out successfully" });
 });
 
 // ================= SEND FORGOT MAIL =================
 exports.Studentsendmail = catchAsyncError(async (req, res, next) => {
-  const student = await Student.findOne({ email: req.body.email }).exec();
+  const student = await Student.findOne({ email: req.body.email });
 
   if (!student) {
     return next(new ErrorHandler("User not found", 404));
   }
 
-  const frontendURL = process.env.FRONTEND_URL; // ✅ FIX
-  const url = `${frontendURL}/student/forget-link/${student._id}`;
+  const url = `${process.env.FRONTEND_URL}/student/forget-link/${student._id}`;
 
-  sendmail(req, res, next, url);
+  await sendmail(req, res, next, url);
 
   student.resetPasswordToken = "1";
   await student.save();
@@ -76,47 +68,46 @@ exports.Studentsendmail = catchAsyncError(async (req, res, next) => {
   res.json({ success: true });
 });
 
-// ================= RESET PASSWORD LINK =================
+// ================= RESET PASSWORD (LINK) =================
 exports.studentforgetlink = catchAsyncError(async (req, res, next) => {
-  const student = await Student.findById(req.params.id).exec();
+  const student = await Student.findById(req.params.id);
 
   if (!student || student.resetPasswordToken !== "1") {
     return next(new ErrorHandler("Invalid or expired link", 400));
   }
 
-  student.resetPasswordToken = "0";
   student.password = req.body.password;
+  student.resetPasswordToken = "0";
   await student.save();
 
-  res.json({ message: "Password successfully changed" });
+  res.json({ message: "Password updated successfully" });
 });
 
-// ================= CHANGE PASSWORD (LOGGED IN) =================
-exports.studentresetPassword = catchAsyncError(async (req, res, next) => {
-  const student = await Student.findById(req.id).exec();
+// ================= RESET PASSWORD (LOGGED IN) =================
+exports.studentresetPassword = catchAsyncError(async (req, res) => {
+  const student = await Student.findById(req.id);
   student.password = req.body.password;
   await student.save();
+
   sendtoken(student, 200, res);
 });
 
 // ================= UPDATE PROFILE =================
 exports.studentupdate = catchAsyncError(async (req, res) => {
-  await Student.findByIdAndUpdate(req.params.id, req.body).exec();
-  res.json({ success: true, message: "Student updated successfully" });
+  await Student.findByIdAndUpdate(req.params.id, req.body);
+  res.json({ success: true });
 });
 
 // ================= AVATAR =================
 exports.studentavatar = catchAsyncError(async (req, res, next) => {
-  const student = await Student.findById(req.id).exec();
+  const student = await Student.findById(req.id);
   const file = req.files?.avatar;
 
-  if (!file) {
-    return next(new ErrorHandler("Avatar file missing", 400));
-  }
+  if (!file) return next(new ErrorHandler("Avatar required", 400));
 
   const modifiedFileName = `student-${Date.now()}${path.extname(file.name)}`;
 
-  if (student.avatar.fileId) {
+  if (student.avatar?.fileId) {
     await imagekit.deleteFile(student.avatar.fileId);
   }
 
@@ -128,7 +119,7 @@ exports.studentavatar = catchAsyncError(async (req, res, next) => {
   student.avatar = { fileId, url };
   await student.save();
 
-  res.json({ success: true, message: "Avatar updated" });
+  res.json({ success: true });
 });
 
 // ================= APPLY INTERNSHIP =================
@@ -174,40 +165,41 @@ exports.applyjob = catchAsyncError(async (req, res, next) => {
 // ================= GET ALL INTERNSHIPS =================
 exports.getAllInternships = catchAsyncError(async (req, res) => {
   const internships = await Internship.find().populate("employe");
-  res.json({ success: true, data: internships });
+  res.json(internships);
 });
 
 // ================= GET SINGLE INTERNSHIP =================
 exports.getSingleInternship = catchAsyncError(async (req, res, next) => {
   const internship = await Internship.findById(req.params.id).populate("employe");
+
   if (!internship) {
     return next(new ErrorHandler("Internship not found", 404));
   }
-  res.json({ success: true, data: internship });
+
+  res.json(internship);
 });
 
 // ================= GET ALL JOBS =================
 exports.getAllJobs = catchAsyncError(async (req, res) => {
   const jobs = await Job.find().populate("employe");
-  res.json({ success: true, data: jobs });
+  res.json(jobs);
 });
 
 // ================= GET SINGLE JOB =================
 exports.getSingleJob = catchAsyncError(async (req, res, next) => {
   const job = await Job.findById(req.params.id).populate("employe");
+
   if (!job) {
     return next(new ErrorHandler("Job not found", 404));
   }
-  res.json({ success: true, data: job });
+
+  res.json(job);
 });
 
 // ================= MY APPLICATIONS =================
 exports.getMyApplications = catchAsyncError(async (req, res) => {
   const student = await Student.findById(req.id)
-    .populate({
-      path: "jobs",
-      populate: { path: "employe", select: "organizationLogo organizationname" },
-    })
+    .populate("jobs")
     .populate("internships");
 
   res.json({
@@ -215,4 +207,34 @@ exports.getMyApplications = catchAsyncError(async (req, res) => {
     internships: student.internships,
   });
 });
-  
+
+// ================= SAVE JOB / INTERNSHIP =================
+exports.saveJobInternship = catchAsyncError(async (req, res) => {
+  const { itemId, itemType } = req.body;
+
+  const student = await Student.findById(req.id);
+
+  student.saved.push({ itemId, itemType });
+  await student.save();
+
+  res.json({ success: true });
+});
+
+// ================= GET SAVED ITEMS =================
+exports.getSavedJobsInternships = catchAsyncError(async (req, res) => {
+  const student = await Student.findById(req.params.studentId);
+  res.json(student.saved);
+});
+
+// ================= REMOVE SAVED ITEM =================
+exports.removeSavedItem = catchAsyncError(async (req, res) => {
+  const { userId, itemId } = req.params;
+
+  const student = await Student.findById(userId);
+  student.saved = student.saved.filter(
+    (item) => item.itemId.toString() !== itemId
+  );
+
+  await student.save();
+  res.json({ success: true });
+});
