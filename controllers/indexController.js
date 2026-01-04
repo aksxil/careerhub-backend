@@ -215,3 +215,4 @@ exports.getMyApplications = catchAsyncError(async (req, res) => {
     internships: student.internships,
   });
 });
+  
