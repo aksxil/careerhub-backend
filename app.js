@@ -9,12 +9,22 @@ const cors = require("cors");
 
 app.use(
   cors({
-    origin: "https://careerhub-frontend-amber.vercel.app",
+    origin: [
+      "https://careerhub-frontend-amber.vercel.app",
+    ],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   })
 );
 
+// Handle preflight requests
+app.options("*", cors());
 
+// ------------------- DISABLE CACHE (VERY IMPORTANT) -------------------
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  next();
+});
 
 // ------------------- DATABASE -------------------
 require("./models/database").connectDatabase();
@@ -31,22 +41,26 @@ app.use(express.urlencoded({ extended: false }));
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
 
+app.use(cookieParser());
+
 app.use(
   session({
+    name: "careerhub.sid",
     secret: process.env.EXPRESS_SESSION_SECRET || "session_secret",
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false, // true in production (HTTPS)
+      secure: true,          // ✅ REQUIRED on Render/Vercel
+      sameSite: "none",      // ✅ REQUIRED for cross-site cookies
+      maxAge: 24 * 60 * 60 * 1000,
     },
   })
 );
 
-app.use(cookieParser());
-
 // ------------------- FILE UPLOAD -------------------
 const fileUpload = require("express-fileupload");
+
 app.use(
   fileUpload({
     useTempFiles: true,
