@@ -8,7 +8,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 app.use(
   cors({
-  origin: "https://careerhub-frontend-amber.vercel.app/",
+  origin: "https://careerhub-frontend-amber.vercel.app",
   credentials: true
 })
 );
