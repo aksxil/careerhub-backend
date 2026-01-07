@@ -1,5 +1,6 @@
 // utils/sendtoken.js
 
+
 exports.sendtoken = (student, statusCode, res) => {
   const token = student.getjwttoken();
 

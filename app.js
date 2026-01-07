@@ -11,6 +11,7 @@ app.use(
   cors({
     origin: [
       "https://careerhub-frontend-amber.vercel.app",
+      "http://localhost:5173"
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
