@@ -21,8 +21,18 @@ const currentUser = catchAsyncError(async (req, res, next) => {
 });
 
 // ================= SIGNUP =================
-const StudentSignup = catchAsyncError(async (req, res) => {
-  const student = await new Student(req.body).save();
+// const StudentSignup = catchAsyncError(async (req, res) => {
+//   const student = await new Student(req.body).save();
+//   sendtoken(student, 201, res);
+// });
+
+const StudentSignup = catchAsyncError(async (req, res, next) => {
+  console.log("BODY:", req.body);
+
+  const student = await Student.create(req.body);
+
+  console.log("Student Saved:", student);
+
   sendtoken(student, 201, res);
 });
 

@@ -23,10 +23,11 @@ exports.currentEmploye = catchAsyncError(async (req, res, next) => {
 
 
 
-exports.employeSignup = catchAsyncError(async (req, res, next) => {
-     const employe = await new Employe(req.body).save();
-     sendtoken(employe, 201, res)
-})
+const employeSignup = catchAsyncError(async (req, res) => {
+    const employe = await Employe.create(req.body);
+
+    sendtokenemploy(employe, 201, res);
+});
 
 
 
